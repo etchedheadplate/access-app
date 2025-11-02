@@ -1,11 +1,3 @@
-[submodule "services/interface"]
-	path = services/interface
-	url = https://github.com/etchedheadplate/access-interface.git
-	branch = develop
-[submodule "services/validation"]
-	path = services/validation
-	url = https://github.com/etchedheadplate/access-validation.git
-	branch = develop
 [submodule "services/database"]
 	path = services/database
 	url = https://github.com/etchedheadplate/access-database.git
