@@ -1,4 +1,4 @@
-![map](https://github.com/etchedheadplate/access-app/media/map.png)
+![map](media/map.png)
 
 ## Build
 ```bash
