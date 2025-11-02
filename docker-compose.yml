@@ -1,0 +1,122 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: access_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: access_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: access_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  database:
+    build:
+      context: ./services/database
+    container_name: access_database
+    ports:
+      - "5003:5000"
+    environment:
+      - SERVICE_NAME=${SERVICE_NAME_DATABASE}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_VHOST=${RABBITMQ_VHOST}
+      - EXCHANGE_NAME=${EXCHANGE_NAME}
+      - ROUTING_KEY_TASK=${ROUTING_KEY_TASK}
+      - ROUTING_KEY_STATUS_CREATED=${ROUTING_KEY_STATUS_CREATED}
+      - ROUTING_KEY_STATUS_VALIDATED=${ROUTING_KEY_STATUS_VALIDATED}
+      - ROUTING_KEY_STATUS_REJECTED=${ROUTING_KEY_STATUS_REJECTED}
+      - ROUTING_KEY_STATUS_DONE=${ROUTING_KEY_STATUS_DONE}
+      - ROUTING_KEY_STATUS_UNPROCESSABLE=${ROUTING_KEY_STATUS_UNPROCESSABLE}
+    depends_on:
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  interface:
+    build:
+      context: ./services/interface
+    container_name: access_interface
+    ports:
+      - "5001:5000"
+    environment:
+      - SERVICE_NAME=${SERVICE_NAME_INTERFACE}
+      - DB_SERVICE_BASE_URL=${DB_SERVICE_BASE_URL}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_VHOST=${RABBITMQ_VHOST}
+      - EXCHANGE_NAME=${EXCHANGE_NAME}
+      - ROUTING_KEY_TASK=${ROUTING_KEY_TASK}
+      - ROUTING_KEY_STATUS_CREATED=${ROUTING_KEY_STATUS_CREATED}
+      - ROUTING_KEY_STATUS_VALIDATED=${ROUTING_KEY_STATUS_VALIDATED}
+      - ROUTING_KEY_STATUS_REJECTED=${ROUTING_KEY_STATUS_REJECTED}
+      - ROUTING_KEY_STATUS_DONE=${ROUTING_KEY_STATUS_DONE}
+      - ROUTING_KEY_STATUS_UNPROCESSABLE=${ROUTING_KEY_STATUS_UNPROCESSABLE}
+    depends_on:
+      database:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  validation:
+    build:
+      context: ./services/validation
+    container_name: access_validation
+    ports:
+      - "5002:5000"
+    environment:
+      - SERVICE_NAME=${SERVICE_NAME_VALIDATION}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_VHOST=${RABBITMQ_VHOST}
+      - EXCHANGE_NAME=${EXCHANGE_NAME}
+      - ROUTING_KEY_TASK=${ROUTING_KEY_TASK}
+      - ROUTING_KEY_STATUS_CREATED=${ROUTING_KEY_STATUS_CREATED}
+      - ROUTING_KEY_STATUS_VALIDATED=${ROUTING_KEY_STATUS_VALIDATED}
+      - ROUTING_KEY_STATUS_REJECTED=${ROUTING_KEY_STATUS_REJECTED}
+      - ROUTING_KEY_STATUS_DONE=${ROUTING_KEY_STATUS_DONE}
+      - ROUTING_KEY_STATUS_UNPROCESSABLE=${ROUTING_KEY_STATUS_UNPROCESSABLE}
+    depends_on:
+      interface:
+        condition: service_started
+      database:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  rabbitmqdata:
