@@ -1,12 +1,12 @@
 [submodule "services/database"]
 	path = services/database
-	url = git@github.com:etchedheadplate/access-database.git
+	url = git@github.com:etchedheadplate/access-executor.git
 	branch = develop
 [submodule "services/interface"]
 	path = services/interface
-	url = git@github.com:etchedheadplate/access-interface.git
+	url = git@github.com:etchedheadplate/access-requester.git
 	branch = develop
 [submodule "services/validation"]
 	path = services/validation
-	url = git@github.com:etchedheadplate/access-validation.git
+	url = git@github.com:etchedheadplate/access-validator.git
 	branch = develop
